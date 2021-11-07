@@ -1,0 +1,93 @@
+1.Создать двух пользователей (с помощью метода User.objects.create_user).
+>>> from news.models import *
+>>> user1 = User.objects.create(username='user1')
+>>> user2 = User.objects.create(username='user2')
+
+2.Создать два объекта модели Author, связанные с пользователями.
+>>> author1 = Author.objects.create(authorUser=user1)
+>>> author2 = Author.objects.create(authorUser=user2)
+
+3.Добавить 4 категории в модель Category.
+>>> category1 = Category.objects.create(categoryName='Почвоведение')
+>>> category2 = Category.objects.create(categoryName='Стенография')
+>>> category3 = Category.objects.create(categoryName='Мотоджимхана')
+>>> category4 = Category.objects.create(categoryName='Машины и механизмы')
+
+4.Добавить 2 статьи и 1 новость.
+>>> Post.objects.create(postAuthor=author1,postTitle='Post1_Title',postKind='A',postBody='Здесь текст статьи Post1.Здесь текст статьи Post1.Здесь текст статьи Post1.')
+<Post: Post1_Title>
+>>> Post.objects.create(postAuthor=author1,postTitle='Post2_Title',postKind='A',postBody='Статьи Post2 текст здесь. Статьи Post2 текст здесь. Статьи Post2 текст здесь.')
+<Post: Post2_Title>
+>>> Post.objects.create(postAuthor=author2,postTitle='Post-news Title',postKind='N',postBody='Это новость, вот это новость! Это новость, вот это новость! Это новость, вот это новость!')
+<Post: Post-news Title>
+
+5.Присвоить им категории (как минимум в одной статье/новости должно быть не меньше 2 категорий).
+>>> Post.objects.all().values('id','postTitle')
+<QuerySet [{'id': 1, 'postTitle': 'Post1_Title'}, {'id': 2, 'postTitle': 'Post2_Title'}, {'id': 3, 'postTitle': 'Post-news Title'}]>
+>>> Category.objects.all().values('id','categoryName')
+<QuerySet [{'id': 1, 'categoryName': 'Почвоведение'}, {'id': 2, 'categoryName': 'Стенография'}, {'id': 3, 'categoryName': 'Мотоджимхана'}, {'id': 4, 'categoryName': 'Машины и механизмы'}]>
+>>> p1=Post.objects.get(id=1)
+>>> p2=Post.objects.get(id=2)
+>>> p3=Post.objects.get(id=3)
+>>> LinkPostCategory.objects.create(linkedPost=p1, linkedCategory=category1)
+<LinkPostCategory: LinkPostCategory object (1)>
+>>> LinkPostCategory.objects.create(linkedPost=p1, linkedCategory=category2)
+<LinkPostCategory: LinkPostCategory object (2)>
+>>> LinkPostCategory.objects.create(linkedPost=p2, linkedCategory=category3)
+<LinkPostCategory: LinkPostCategory object (3)>
+>>> LinkPostCategory.objects.create(linkedPost=p3, linkedCategory=category4)
+<LinkPostCategory: LinkPostCategory object (4)>
+
+# или, по учебнику - даже p1.objects.add(category1,category2,category3,category4) и т.д.
+
+6.Создать как минимум 4 комментария к разным объектам модели Post (в каждом объекте должен быть как минимум один комментарий).
+>>> user3 = User.objects.create(username='user3')
+>>> user4 = User.objects.create(username='user4')
+
+>>> Comment.objects.create(commentUser=user1,commentPost=p1,commentBody='Один комментарий. Один комментарий. Один комментарий.')
+<Comment: user1>
+>>> Comment.objects.create(commentUser=user2,commentPost=p1,commentBody='Ещё один комментарий. Ещё один комментарий. Ещё один комментарий.')
+<Comment: user2>
+>>> Comment.objects.create(commentUser=user3,commentPost=p1,commentBody='И ещё один комментарий. И ещё один комментарий. И ещё один комментарий.')
+<Comment: user3>
+>>> Comment.objects.create(commentUser=user4,commentPost=p1,commentBody='И ещё один снова комментарий. И ещё один снова комментарий. И ещё один снова комментарий.')
+<Comment: user4>
+>>> Comment.objects.create(commentUser=user4,commentPost=p2,commentBody='Комментарий другого рода. Комментарий другого рода. Комментарий другого рода.')
+<Comment: user4>
+>>> Comment.objects.create(commentUser=user1,commentPost=p2,commentBody='Другой комментарий другого рода. Другой комментарий другого рода. Другой комментарий другого рода.')
+<Comment: user1>
+>>> Comment.objects.create(commentUser=user3,commentPost=p3,commentBody='Комментируем новость - вот это комментарий! Комментируем новость - вот это комментарий!')
+<Comment: user3>
+>>> Comment.objects.create(commentUser=user4,commentPost=p3,commentBody='Комментарий к новости. Комментарий к новости. Комментарий к новости.')
+<Comment: user4>
+
+7.Применяя функции like() и dislike() к статьям/новостям и комментариям, скорректировать рейтинги этих объектов.
+p1.like()
+...
+p3.dislike()
+...
+Comment.objects.get(pk=1).like()
+...
+Comment.objects.get(pk=2).dislike()
+...
+
+8.Обновить рейтинги пользователей (не пользователей, а авторов!).
+author1.update_rating()
+author2.update_rating()
+
+9.Вывести username и рейтинг лучшего пользователя (применяя сортировку и возвращая поля первого объекта).
+>>> Author.objects.all().order_by('-authorRating').values('authorUser__username','authorRating')[0]
+{'authorUser__username': 'user1', 'authorRating': 43}
+
+10.Вывести дату добавления, username автора, рейтинг, заголовок и превью лучшей статьи, основываясь на лайках/дислайках к этой статье.
+>>> Post.objects.all().values('postCreated','postAuthor__authorUser__username','postRating','postTitle',).order_by('-postRating')[0]
+{'postCreated': datetime.datetime(2021, 11, 5, 17, 22, 42, 833634, tzinfo=<UTC>), 'postAuthor__authorUser__username': 'user1', 'postRating': 8, 'postTitle': 'Post2_Title'}
+
+>>> Post.objects.all().order_by('-postRating')[0].preview()
+'Статьи Post2 текст здесь. Статьи Post2 текст здесь. Статьи Post2 текст здесь....'
+
+11.Вывести все комментарии (дата, пользователь, рейтинг, текст) к этой статье.
+>>> Comment.objects.filter(commentPost=Post.objects.all().order_by('-postRating')[0]).values('commentCreated','commentUser__username','commentRating','commentBody')
+<QuerySet [{'commentCreated': datetime.datetime(2021, 11, 5, 18, 1, 22, 840872, tzinfo=<UTC>), 'commentUser__username': 'user4', 'commentRating': 5, 'commentBody': 'Комментарий другого рода.
+ Комментарий другого рода. Комментарий другого рода.'}, {'commentCreated': datetime.datetime(2021, 11, 5, 18, 2, 12, 132799, tzinfo=<UTC>), 'commentUser__username': 'user1', 'commentRating':
+ 6, 'commentBody': 'Другой комментарий другого рода. Другой комментарий другого рода. Другой комментарий другого рода.'}]>
